@@ -15,25 +15,51 @@ import zipfile
 import xml.etree.ElementTree as ET
 import os
 import io
-
-
 def initialize_ee(key_path):
+    """
+    Initialize Google Earth Engine.
+    """
+
     try:
-        if os.path.exists(key_path):
-            with open(key_path) as f:
-                key = json.load(f)
-            credentials = ee.ServiceAccountCredentials(key['client_email'], key_path)
+        # Try Render environment variable first
+        env_key = os.environ.get("EE_SERVICE_ACCOUNT_KEY")
+
+        if env_key:
+            key = json.loads(env_key)
+
+            credentials = ee.ServiceAccountCredentials(
+                key["client_email"],
+                key_data=json.dumps(key)
+            )
+
             ee.Initialize(credentials)
-            print("  [GEE] Authenticated via service account", file=sys.stderr)
-            return True
+            print("  [GEE] Authenticated using Render environment variable", file=sys.stderr)
+            return
+
+        # Try local JSON file
+        if os.path.exists(key_path):
+            with open(key_path, "r") as f:
+                key = json.load(f)
+
+            credentials = ee.ServiceAccountCredentials(
+                key["client_email"],
+                key_file=key_path
+            )
+
+            ee.Initialize(credentials)
+            print("  [GEE] Authenticated using local JSON file", file=sys.stderr)
+            return
+
     except Exception as e:
-        print(f"  [GEE] Service account failed: {e}", file=sys.stderr)
+        print(f"  [GEE] Service account authentication failed: {e}", file=sys.stderr)
+
     try:
         ee.Initialize()
-        print("  [GEE] Authenticated via default credentials", file=sys.stderr)
-        return True
-    except Exception as e2:
-        print(f"  [GEE] Could not initialize: {e2}", file=sys.stderr)
+        print("  [GEE] Authenticated using default credentials", file=sys.stderr)
+        return
+
+    except Exception as e:
+        print(f"  [GEE] Could not initialize Earth Engine: {e}", file=sys.stderr)
         sys.exit(1)
 
 
