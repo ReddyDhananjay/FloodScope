@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FloodScope</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<style>
+  :root{
+    --bg:#fff;--panel:#f8faf9;--panel2:#f0f4f2;--panel3:#e6ece8;
+    --border:#e0e6e3;--border2:#d0d8d3;--text:#0d1117;--muted:#5c6b66;--muted2:#8a9690;
+    --green:#00994d;--green-bright:#00b85e;--green-light:#e6f7ee;--green-border:#b3e6c8;
+    --black:#000;--red:#dc3545;--red-light:#fde8ea;--blue:#1a73e8;--blue-light:#e8f0fe;
+    --radius:12px;--radius-sm:10px;--shadow-xs:0 1px 2px rgba(0,0,0,.04);
+    --shadow:0 2px 8px rgba(0,0,0,.06);--shadow-md:0 6px 20px rgba(0,0,0,.1);
+    --shadow-lg:0 12px 32px rgba(0,0,0,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased}
+  #app{display:grid;grid-template-columns:340px 1fr;grid-template-rows:56px 1fr;height:100vh;width:100vw}
+
+  header{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:0 22px;background:var(--bg);border-bottom:1px solid var(--border);box-shadow:var(--shadow-xs);z-index:1200}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;color:var(--black)}
+  .logo .dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 10px rgba(0,153,77,.5);animation:pulse 2.5s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+  .logo .accent{color:var(--green)}
+  .status-bar{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+  .header-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .user-info{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+  .user-info img{width:30px;height:30px;border-radius:50%;border:2px solid var(--green-border)}
+  .logout-btn{background:var(--bg);border:1px solid var(--border2);color:var(--muted);padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;transition:.2s}
+  .logout-btn:hover{color:var(--red);border-color:var(--red);background:var(--red-light)}
+
+  .btn{cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text);padding:10px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;transition:.18s;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .btn:hover{background:var(--panel2);border-color:var(--muted2);transform:translateY(-1px)}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;font-weight:700}
+  .btn.primary:hover{background:var(--green-bright);box-shadow:0 4px 14px rgba(0,153,77,.3)}
+  .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.blue:hover{background:#1557b8}
+  .btn.small{padding:8px 12px;font-size:12px}
+  .btn:disabled{opacity:.4;cursor:wait;transform:none}
+  .btn.outline-green{background:var(--green-light);border:1px solid var(--green-border);color:var(--green)}
+  .btn.outline-green:hover{background:var(--green);color:#fff}
+
+  aside{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  .scroll{overflow-y:auto;flex:1}
+  .section{padding:16px 18px;border-bottom:1px solid var(--border)}
+  .section:last-child{border-bottom:0}
+  .sec-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .sec-header .ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .sec-header .ic.green{background:var(--green-light);color:var(--green)}
+  .sec-header .ic.blue{background:var(--blue-light);color:var(--blue)}
+  .sec-header .ic.orange{background:#fff3e0;color:#ef6c00}
+  .sec-header .title{font-size:13px;font-weight:700;color:var(--black)}
+  .sec-header .sub{font-size:11px;color:var(--muted);font-weight:500;margin-top:1px}
+
+  label{font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px;letter-spacing:.3px}
+  input[type=date]{background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;width:100%;font-family:inherit;transition:.15s}
+  input[type=date]:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(0,153,77,.1)}
+  .row{display:flex;gap:8px;align-items:center}
+  .date-arrow{color:var(--muted2);font-size:16px;font-weight:700}
+
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .hint b{color:var(--text)}
+
+  .draw-instruction{background:var(--blue-light);border:1px solid #c5dcfa;border-radius:var(--radius-sm);padding:10px 12px;font-size:11.5px;color:var(--blue);line-height:1.5;margin-bottom:10px;display:none}
+  .draw-instruction.show{display:block;animation:fadeIn .3s}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+  .file-drop{border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:14px;text-align:center;cursor:pointer;transition:.18s;background:var(--bg)}
+  .file-drop:hover{border-color:var(--green);background:var(--green-light)}
+  .file-drop .icon{font-size:22px;margin-bottom:4px}
+  .file-drop .text{font-size:12px;font-weight:700;color:var(--text)}
+  .file-drop .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .file-name{font-size:11.5px;color:var(--green);font-weight:600;margin-top:6px;padding:5px 9px;background:var(--green-light);border:1px solid var(--green-border);border-radius:6px}
+
+  .info-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;margin-top:8px;box-shadow:var(--shadow-xs)}
+  .info-card.green{border-left:3px solid var(--green);background:var(--green-light)}
+  .info-card.red{border-left:3px solid var(--red);background:var(--red-light)}
+  .info-card.blue{border-left:3px solid var(--blue);background:var(--blue-light)}
+  .info-card .ctitle{font-size:12.5px;font-weight:700;color:var(--black);display:flex;align-items:center;gap:6px}
+  .info-card .cdesc{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:5px}
+  .info-card .cdesc b{color:var(--text)}
+
+  .data-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)}
+  .data-row:last-child{border-bottom:0}
+  .data-row .label{color:var(--muted);font-weight:600;white-space:nowrap}
+  .data-row .value{font-weight:700;color:var(--black);text-align:right;word-break:break-word;font-size:11.5px}
+
+  .grid-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .stat{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;box-shadow:var(--shadow-xs)}
+  .stat .n{font-size:18px;font-weight:800;color:var(--black);letter-spacing:-.5px}
+  .stat .n.red{color:var(--red)}
+  .stat .n.grn{color:var(--green)}
+  .stat .n.blue{color:var(--blue)}
+  .stat .l{font-size:9px;color:var(--muted);margin-top:2px;font-weight:600;letter-spacing:.3px}
+
+  /* MAP on top (fills everything), STREET VIEW on bottom — NO empty space anywhere */
+  main{display:grid;grid-template-columns:1fr;grid-template-rows:1fr 300px;background:var(--bg);position:relative;min-width:0;min-height:0;height:100%;width:100%;overflow:hidden;gap:0}
+  #map{width:100%;height:100%;min-height:0;background:var(--panel2);overflow:hidden}
+
+  #streetview{width:100%;height:100%;background:#1a1d1b;position:relative;min-height:0;overflow:hidden}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+  #streetview iframe{width:100%;height:100%;border:0}
+
+  .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#8a9690;text-align:center;padding:20px;pointer-events:none}
+  .empty svg{opacity:.3}
+  .empty .big{font-size:14px;color:#aaa;font-weight:600}
+  .empty .small{font-size:12px;color:#8a9690}
+  .sv-info{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.95);border:1px solid var(--border);border-radius:10px;padding:8px 13px;font-size:12.5px;z-index:500;box-shadow:var(--shadow-md);backdrop-filter:blur(8px)}
+  .sv-info b{color:var(--green)}
+  .sv-info .coord{color:var(--muted);font-size:10px;font-family:ui-monospace,monospace}
+
+  #toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(24px);background:var(--black);color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.3s;z-index:3000;box-shadow:var(--shadow-lg);max-width:90vw}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .loader{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite}
+  .loader-lg{width:32px;height:32px;border-width:3px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .gee-loading{padding:24px 16px;text-align:center}
+  .gee-loading .title{font-size:13px;font-weight:700;margin-top:12px}
+  .gee-loading .desc{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+
+  ::-webkit-scrollbar{width:7px;height:7px}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+  .hidden{display:none!important}
+
+  .leaflet-container{background:var(--panel2);font-family:inherit}
+  .leaflet-control-attribution{background:rgba(255,255,255,.9)!important;color:var(--muted)!important;font-size:10px;border-radius:4px}
+  .leaflet-control-attribution a{color:var(--green)!important}
+  .leaflet-bar{border:none!important;box-shadow:var(--shadow)!important;border-radius:8px!important;overflow:hidden}
+  .leaflet-bar a{background:#fff!important;color:var(--text)!important;width:34px!important;height:34px!important;line-height:34px!important;font-size:16px!important}
+  .leaflet-bar a:hover{background:var(--panel2)!important;color:var(--green)!important}
+  .leaflet-control-layers{background:#fff!important;border:1px solid var(--border2)!important;border-radius:10px!important;color:var(--text)!important;box-shadow:var(--shadow-md)!important}
+  .leaflet-control-layers-expanded{padding:10px 14px!important;font-size:12px!important}
+  /* Draw toolbar */
+  .leaflet-draw{display:none!important}
+  .leaflet-draw-toolbar a{border-radius:6px!important}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo"><span class="dot"></span>Flood<span class="accent">Scope</span></div>
+    <div class="status-bar" id="status">Ready</div>
+    <div class="header-right">
+      <div class="user-info" id="userInfo" style="display:none">
+        <span id="userName"></span>
+        <img id="userAvatar" src="" alt="" />
+      </div>
+      <button class="logout-btn" id="logoutBtn" style="display:none">Logout</button>
+    </div>
+  </header>
+
+  <aside>
+    <div class="scroll">
+      <!-- DRAW BOUNDARY -->
+      <div class="section">
+        <div class="sec-header">
+          <div class="ic green">✏️</div>
+          <div><div class="title">Select Boundary</div><div class="sub">Draw on map or upload file</div></div>
+        </div>
+
+        <div class="draw-instruction" id="drawHint">
+          🖊️ <b>Drawing mode active!</b><br>Click on the map to draw your boundary polygon. Click the first point again to finish.
+        </div>
+
+        <button class="btn primary" id="drawBtn" style="width:100%;margin-bottom:8px">
+          ✏️ Draw Boundary on Map
+        </button>
+
+        <div class="row" style="margin-bottom:8px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:10px;color:var(--muted2);padding:0 8px">OR</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+
+        <div class="file-drop" id="fileDrop">
+          <div class="icon">📁</div>
+          <div class="text">Upload KML / KMZ</div>
+          <div class="sub">Optional: select area by file</div>
+        </div>
+        <input type="file" id="kmlFile" accept=".kml,.kmz" hidden />
+        <div id="kmlFileName" class="file-name hidden"></div>
+
+        <button class="btn small outline-green" id="clearBtn" style="width:100%;margin-top:8px;display:none">🗑️ Clear Boundary</button>
+      </div>
+
+      <!-- DATE RANGE + ANALYZE -->
+      <div class="section">
+        <div class="sec-header">
+          <div class="ic blue">🛰️</div>
+          <div><div class="title">Satellite Analysis</div><div class="sub">Google Earth Engine</div></div>
+        </div>
+        <label>Date Range</label>
+        <div class="row" style="gap:6px">
+          <input type="date" id="geeDateStart" style="flex:1;min-width:0" />
+          <span class="date-arrow">→</span>
+          <input type="date" id="geeDateEnd" style="flex:1;min-width:0" />
+        </div>
+        <div class="hint" style="margin-top:5px">Data: <b>Jan 2017</b> to <b>today</b>. Any location in India.</div>
+        <button class="btn blue" id="geeRunBtn" style="width:100%;margin-top:10px">🛰️ Run Analysis</button>
+        <div id="geeResult" style="margin-top:8px"></div>
+      </div>
+
+      <!-- RESULTS + CSV EXPORT -->
+      <div class="section hidden" id="resultsSec">
+        <div class="sec-header">
+          <div class="ic orange">📊</div>
+          <div><div class="title">Analysis Results</div><div class="sub">Flood data from boundary</div></div>
+        </div>
+        <div id="resultsBody"></div>
+        <button class="btn primary" id="exportCsvBtn" style="width:100%;margin-top:10px;display:none">
+          ⬇️ Export CSV Data
+        </button>
+      </div>
+
+      <!-- SELECTED POINT -->
+      <div class="section hidden" id="selSec">
+        <div class="sec-header">
+          <div class="ic green">📍</div>
+          <div><div class="title">Selected Point</div><div class="sub">Click map to inspect</div></div>
+        </div>
+        <div id="selBody"></div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div id="map"></div>
+    <div id="streetview">
+      <div class="empty" id="svEmpty">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        <div class="big">Street View</div>
+        <div class="small">Click any point on the map</div>
+      </div>
+      <div class="sv-info" id="svInfo" style="display:none"></div>
+    </div>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+let map, drawnItems, drawControl, selMarker=null, geeTileLayer=null, currentPolygon=null;
+let GKEY='', curSel=null, kmlFile=null, lastCsvData='';
+const $=id=>document.getElementById(id);
+function toast(m,ms=3000){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms);}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function mk(t){return document.createElement(t);}
+function safeMax(a,f){let m=-Infinity;for(const x of a){const v=f(x);if(v>m)m=v;}return m;}
+
+async function api(path,opts={}){const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts,body:opts.body?JSON.stringify(opts.body):undefined});if(!r.ok){const e=await r.json().catch(()=>({error:r.statusText}));throw new Error(e.error||'API error '+r.status);}return r.json();}
+
+/* ===== AUTH ===== */
+async function initAuth(){
+  try{const u=await api('/auth/user');if(u.authenticated){$('userInfo').style.display='flex';$('userName').textContent=u.user.name;$('userAvatar').src=u.user.avatar||'';$('logoutBtn').style.display='inline-block';}}catch(e){}
+  try{const r=await fetch('/api/settings/maps-key-value');if(r.ok){const d=await r.json();if(d.key&&d.key.length>10){GKEY=d.key;console.log('[SV] API key loaded ✓');}}}catch(e){}
+  $('logoutBtn').onclick=()=>window.location.href='/auth/logout';
+}
+
+/* ===== DATES ===== */
+function setupDates(){
+  var today=new Date().toISOString().split('T')[0];
+  $('geeDateStart').min='2017-01-01';$('geeDateStart').max=today;
+  $('geeDateEnd').min='2017-01-01';$('geeDateEnd').max=today;
+  $('geeDateStart').value='2024-08-25';
+  $('geeDateEnd').value='2024-09-05';
+}
+
+/* ===== MAP + DRAWING ===== */
+function initMap(){
+  if(map)return;
+  map=L.map('map',{zoomControl:true,attributionControl:true}).setView([20.59,78.96],5);
+  const light=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OSM &copy; CARTO'});
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'&copy; Esri'});
+  const street=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OSM'});
+  light.addTo(map);
+  L.control.layers({'Light':light,'Street':street,'Satellite':sat},{},{position:'topright'}).addTo(map);
+
+  // Drawing layer
+  drawnItems=new L.FeatureGroup();
+  map.addLayer(drawnItems);
+
+  // Draw control (hidden CSS, triggered by our button)
+  drawControl=new L.Control.Draw({
+    draw:{polygon:{allowIntersection:false,showArea:true,shapeOptions:{color:'#00994d',weight:3,fillColor:'#00994d',fillOpacity:0.15}},rectangle:{shapeOptions:{color:'#00994d',weight:3,fillColor:'#00994d',fillOpacity:0.15}},circle:false,polyline:false,marker:false,circlemarker:false},
+    edit:{featureGroup:drawnItems,remove:true}
+  });
+  map.addControl(drawControl);
+
+  // When polygon is drawn
+  map.on(L.Draw.Event.CREATED,function(e){
+    drawnItems.clearLayers();
+    const layer=e.layer;
+    drawnItems.addLayer(layer);
+    currentPolygon=layer;
+    $('drawHint').classList.remove('show');
+    $('drawBtn').textContent='✏️ Redraw Boundary';
+    $('clearBtn').style.display='block';
+    toast('Boundary selected! Now pick dates and run analysis.',3000);
+    // Clear any uploaded KML
+    kmlFile=null;
+    $('kmlFileName').classList.add('hidden');
+  });
+
+  map.on(L.Draw.Event.EDITED,function(e){
+    const layers=e.layers;
+    layers.eachLayer(function(l){currentPolygon=l;});
+    toast('Boundary updated',2000);
+  });
+
+  map.on('click',e=>onMapClick(e.latlng.lat,e.latlng.lng));
+}
+
+/* ===== DRAW BUTTON ===== */
+$('drawBtn').onclick=()=>{
+  initMap();
+  $('drawHint').classList.add('show');
+  toast('Click on the map to draw your boundary polygon',3000);
+  // Trigger polygon draw tool
+  new L.Draw.Polygon(map,{allowIntersection:false,showArea:true,shapeOptions:{color:'#00994d',weight:3,fillColor:'#00994d',fillOpacity:0.15}}).enable();
+};
+
+$('clearBtn').onclick=()=>{
+  if(drawnItems)drawnItems.clearLayers();
+  currentPolygon=null;
+  if(geeTileLayer){map.removeLayer(geeTileLayer);geeTileLayer=null;}
+  $('clearBtn').style.display='none';
+  $('drawBtn').textContent='✏️ Draw Boundary on Map';
+  $('resultsSec').classList.add('hidden');
+  toast('Boundary cleared',2000);
+};
+
+/* ===== KML UPLOAD ===== */
+$('fileDrop').onclick=()=>$('kmlFile').click();
+$('kmlFile').onchange=e=>{
+  kmlFile=e.target.files[0];
+  if(!kmlFile)return;
+  $('kmlFileName').textContent='📎 '+kmlFile.name;
+  $('kmlFileName').classList.remove('hidden');
+  // Clear drawn polygon
+  if(drawnItems)drawnItems.clearLayers();
+  currentPolygon=null;
+  toast('File selected: '+kmlFile.name+'. Pick dates and run analysis.',3000);
+};
+
+/* ===== GEE ANALYSIS ===== */
+function getPolygonCoords(){
+  if(!currentPolygon)return null;
+  let coords=[];
+  if(currentPolygon instanceof L.Polygon){
+    const latlngs=currentPolygon.getLatLngs()[0];
+    coords=latlngs.map(ll=>[ll.lng,ll.lat]);
+  }else if(currentPolygon instanceof L.Rectangle){
+    const ne=currentPolygon.getBounds().getNorthEast();
+    const sw=currentPolygon.getBounds().getSouthWest();
+    coords=[[sw.lng,sw.lat],[ne.lng,sw.lat],[ne.lng,ne.lat],[sw.lng,ne.lat]];
+  }
+  return coords;
+}
+
+$('geeRunBtn').onclick=async()=>{
+  const sd=$('geeDateStart').value,ed=$('geeDateEnd').value;
+  // Date validation
+  if(!sd||!ed){toast('Select both dates');return;}
+  var s=new Date(sd),e=new Date(ed),t=new Date();t.setHours(23,59,59,999);
+  if(s<new Date('2017-01-01')||e<new Date('2017-01-01')){toast('Dates before Jan 2017 not available');return;}
+  if(s>t||e>t){toast('Cannot select future dates');return;}
+  if(s>e){toast('Start must be before end');return;}
+
+  const polyCoords=getPolygonCoords();
+
+  if(!polyCoords&&!kmlFile){
+    toast('Draw a boundary on the map OR upload a KML file first',3500);
+    return;
+  }
+
+  initMap();
+  $('geeRunBtn').disabled=true;
+  $('geeRunBtn').textContent='Running...';
+  $('geeResult').innerHTML='<div class="gee-loading"><span class="loader loader-lg"></span><div class="title">Analyzing satellite data...</div><div class="desc">'+sd+' to '+ed+'<br>30-90 seconds</div></div>';
+  $('status').textContent='Earth Engine analyzing...';
+
+  try{
+    let data;
+    if(polyCoords){
+      // Send polygon coordinates to API (no file needed)
+      const res=await fetch('/api/gee/analyze-polygon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({coordinates:polyCoords,startDate:sd,endDate:ed})});
+      data=await res.json();
+      if(!res.ok||data.error)throw new Error(data.error||data.detail||'Failed');
+    }else{
+      // Send KML file
+      const fd=new FormData();
+      fd.append('kml',kmlFile);fd.append('startDate',sd);fd.append('endDate',ed);
+      const res=await fetch('/api/gee/analyze',{method:'POST',body:fd});
+      data=await res.json();
+      if(!res.ok||data.error)throw new Error(data.error||data.detail||'Failed');
+    }
+
+    // Show results
+    $('resultsSec').classList.remove('hidden');
+    let h='<div class="info-card green"><div class="ctitle">✅ Analysis Complete</div><div class="cdesc">';
+    h+='📅 <b>'+sd+'</b> to <b>'+ed+'</b><br>';
+    h+='🛰️ Images: <b>'+(data.imageCount||0)+'</b><br>';
+    if(data.floodedAreaKm2)h+='🌊 Flooded area: <b>'+data.floodedAreaKm2+' km²</b><br>';
+    if(data.csvPointCount)h+='📍 Data points: <b>'+data.csvPointCount+'</b>';
+    h+='</div></div>';
+    $('resultsBody').innerHTML=h;
+    $('geeResult').innerHTML=h;
+
+    // Show CSV export button
+    if(data.csvData&&data.csvData.length>0){
+      lastCsvData=data.csvData;
+      $('exportCsvBtn').style.display='block';
+    }
+
+    // Add flood overlay to map
+    if(data.tileUrl){
+      if(geeTileLayer)map.removeLayer(geeTileLayer);
+      geeTileLayer=L.tileLayer(data.tileUrl,{maxZoom:19,opacity:0.65}).addTo(map);
+      toast('Flood overlay added to map ✓',3000);
+    }
+
+    // Zoom to area
+    if(currentPolygon){
+      map.fitBounds(currentPolygon.getBounds(),{padding:[60,60]});
+    }else if(data.bounds){
+      map.fitBounds([[data.bounds[1],data.bounds[0]],[data.bounds[3],data.bounds[2]]],{padding:[60,60]});
+    }
+
+    $('status').textContent='Analysis complete';
+  }catch(err){
+    $('geeResult').innerHTML='<div class="info-card red"><div class="ctitle">❌ Error</div><div class="cdesc">'+esc(err.message)+'</div></div>';
+    $('status').textContent='Analysis failed';
+  }finally{
+    $('geeRunBtn').disabled=false;
+    $('geeRunBtn').textContent='🛰️ Run Analysis';
+  }
+};
+
+/* ===== CSV EXPORT ===== */
+$('exportCsvBtn').onclick=()=>{
+  if(!lastCsvData)return;
+  const blob=new Blob([lastCsvData],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=mk('a');
+  a.href=url;
+  a.download='flood_analysis_'+$('geeDateStart').value+'_to_'+$('geeDateEnd').value+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV downloaded ✓',2000);
+};
+
+/* ===== MAP CLICK ===== */
+async function onMapClick(lat,lng){
+  selectPoint({lat,lat:lat,lng:lng,fid:0,freq:0,raw:{}});
+}
+
+function selectPoint(p){
+  if(selMarker)map.removeLayer(selMarker);
+  selMarker=L.circleMarker([p.lat,p.lng],{radius:8,color:'#00994d',weight:3,fillColor:'#fff',fillOpacity:1}).addTo(map);
+  $('selSec').classList.remove('hidden');
+  $('selBody').innerHTML='<div class="data-row"><span class="label">Coordinates</span><span class="value">'+p.lat.toFixed(5)+', '+p.lng.toFixed(5)+'</span></div>';
+  $('status').textContent='Point: '+p.lat.toFixed(4)+', '+p.lng.toFixed(4);
+  showStreetView(p);
+}
+
+/* ===== STREET VIEW (floating panel) ===== */
+function showStreetView(p){
+  const wrap=$('streetview');
+  // Remove empty state
+  const empty=wrap.querySelector('#svEmpty');
+  if(empty)empty.remove();
+  // Clear previous iframe
+  const oldFr=wrap.querySelector('iframe');
+  if(oldFr)oldFr.remove();
+
+  $('svInfo').style.display='block';
+  $('svInfo').innerHTML='<b>Street View</b><div class="coord">'+p.lat.toFixed(5)+', '+p.lng.toFixed(5)+'</div>';
+
+  const fr=mk('iframe');
+  fr.allowFullscreen=true;fr.loading='lazy';fr.referrerPolicy='no-referrer-when-downgrade';
+  if(GKEY)fr.src='https://www.google.com/maps/embed/v1/streetview?key='+GKEY+'&location='+p.lat+','+p.lng+'&heading=0&pitch=0&fov=90';
+  else fr.src='https://maps.google.com/maps?q=&layer=c&cbll='+p.lat+','+p.lng+'&cbp=11,0,0,0,0&output=embed';
+  wrap.appendChild(fr);
+}
+
+
+
+/* ===== INIT ===== */
+async function init(){
+  setupDates();
+  initMap();
+  await initAuth();
+  $('status').textContent='Draw a boundary or upload KML to begin';
+}
+init();
+</script>
+</body>
+</html>

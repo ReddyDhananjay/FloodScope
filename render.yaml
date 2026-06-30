@@ -1,0 +1,24 @@
+# Render.com deployment config
+# Deploy instructions:
+# 1. Push this project to GitHub
+# 2. Go to https://render.com -> New -> Web Service
+# 3. Connect your GitHub repo
+# 4. Render will auto-detect this render.yaml
+#
+# Environment Variables to set in Render dashboard:
+#   MONGODB_URI = your MongoDB Atlas connection string
+#   NVIDIA_API_KEY = your nvapi key (optional, for AI)
+#   PORT = 8000 (Render sets this automatically)
+
+services:
+  - type: web
+    name: floodscope
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false  # Set this in Render dashboard

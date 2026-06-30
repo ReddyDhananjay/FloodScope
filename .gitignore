@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+ee-key.json
+**/ee-key.json
+service-account*.json
+*-credentials.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# MongoDB data (if local)
+data/db/
+
+# Runtime user uploads (KML/KMZ files users submit) — don't commit user data
+uploads/*
+!uploads/.gitkeep
+
+# Editor/IDE
+.vscode/
+.idea/
