@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { writeFileSync, unlinkSync, existsSync } from 'fs';
+import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'fs';
 
 export const geeRouter = Router();
 
@@ -40,7 +40,13 @@ export async function handleGeePolygon(req, res) {
   }
 
   // Save coordinates as temp KML for the Python script
-  const tempKml = path.join(__dirname, '..', 'uploads', `polygon_${Date.now()}.kml`);
+const uploadDir = path.join(__dirname, '..', 'uploads');
+
+if (!existsSync(uploadDir)) {
+  mkdirSync(uploadDir, { recursive: true });
+}
+
+const tempKml = path.join(uploadDir, `polygon_${Date.now()}.kml`);
   const coordsXml = coordinates.map(c => `${c[0]},${c[1]},0`).join(' ');
   const kmlContent = `<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Placemark><Polygon><outerBoundaryIs><LinearRing><coordinates>${coordsXml}</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></kml>`;
 
