@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FloodScope — Sign In</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<style>
+:root{
+  --c-bg:#fff;--c-surface:#f7f9f8;--c-surface-2:#f0f4f2;--c-border:#e0e6e3;--c-border-2:#d0d8d3;
+  --c-text:#0d1117;--c-text-muted:#5c6b66;--c-text-faint:#8a9690;
+  --c-green:#00994d;--c-green-1:#00b85e;--c-green-soft:#e6f7ee;--c-green-edge:#b3e6c8;
+  --c-red:#dc3545;--c-red-soft:#fde8ea;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --r-sm:8px;--r-md:10px;--r-lg:14px;
+  --t-fast:.15s cubic-bezier(.4,0,.2,1);--t-med:.25s cubic-bezier(.4,0,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:linear-gradient(135deg,#f7f9f8 0%,#e6f7ee 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{width:100%;max-width:420px;background:var(--c-bg);border-radius:var(--r-lg);box-shadow:0 20px 60px rgba(0,0,0,.1);overflow:hidden}
+.card-header{text-align:center;padding:32px 32px 20px}
+.logo{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px}
+.logo .dot{width:12px;height:12px;border-radius:50%;background:var(--c-green);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.logo .name{font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--c-text)}
+.logo .accent{color:var(--c-green)}
+.h-title{font-size:20px;font-weight:700;color:var(--c-text);margin-bottom:4px}
+.h-sub{font-size:14px;color:var(--c-text-muted)}
+.tabs{display:flex;padding:0 32px;border-bottom:1px solid var(--c-border)}
+.tab{flex:1;padding:12px;text-align:center;font-size:14px;font-weight:600;cursor:pointer;color:var(--c-text-faint);border-bottom:2px solid transparent;transition:var(--t-fast);background:none;border-left:0;border-right:0;border-top:0}
+.tab.active{color:var(--c-green);border-bottom-color:var(--c-green)}
+.tab:hover:not(.active){color:var(--c-text)}
+.form-body{padding:24px 32px 28px}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 16px;border:1px solid var(--c-border-2);border-radius:var(--r-md);background:var(--c-bg);color:#3c4043;font-size:14px;font-weight:600;cursor:pointer;transition:var(--t-fast);text-decoration:none;font-family:inherit}
+.google-btn:hover{background:var(--c-surface);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.google-btn svg{width:18px;height:18px;flex-shrink:0}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--c-border)}
+.divider span{font-size:12px;color:var(--c-text-faint);font-weight:500}
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:12px;font-weight:700;color:var(--c-text-muted);margin-bottom:6px}
+.input-group input{width:100%;padding:11px 14px;border:1px solid var(--c-border-2);border-radius:var(--r-md);font-size:14px;color:var(--c-text);font-family:inherit;transition:var(--t-fast);background:var(--c-bg)}
+.input-group input:focus{outline:none;border-color:var(--c-green);box-shadow:0 0 0 3px rgba(0,153,77,.1)}
+.submit-btn{width:100%;padding:12px;border:0;border-radius:var(--r-md);background:var(--c-green);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:var(--t-fast);font-family:inherit}
+.submit-btn:hover{background:var(--c-green-1);box-shadow:0 4px 14px rgba(0,153,77,.3)}
+.submit-btn:active{transform:scale(.98)}
+.submit-btn:disabled{opacity:.5;cursor:wait}
+.error-msg{background:var(--c-red-soft);border:1px solid #f5b8c0;color:var(--c-red);padding:10px 14px;border-radius:var(--r-sm);font-size:13px;margin-bottom:14px;display:none}
+.error-msg.show{display:block;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.footer-text{text-align:center;font-size:13px;color:var(--c-text-muted);margin-top:16px}
+.footer-text a{color:var(--c-green);font-weight:600;cursor:pointer;text-decoration:none}
+.footer-text a:hover{text-decoration:underline}
+.secure-note{text-align:center;margin-top:14px;font-size:11px;color:var(--c-text-faint)}
+.secure-note b{color:var(--c-green)}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.form-section{display:none}
+.form-section.active{display:block;animation:fadeIn .3s}
+@media(max-width:480px){.card-header{padding:24px 24px 16px}.form-body{padding:20px 24px 24px}.tabs{padding:0 24px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <div class="logo"><span class="dot"></span><span class="name">Flood<span class="accent">Scope</span></span></div>
+    <div class="h-title" id="formTitle">Welcome back</div>
+    <div class="h-sub" id="formSub">Sign in to continue</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="signinTab" onclick="switchTab('signin')">Sign In</button>
+    <button class="tab" id="signupTab" onclick="switchTab('signup')">Sign Up</button>
+  </div>
+  <div class="form-body">
+    <a href="/auth/google" class="google-btn" id="googleBtn" style="display:none">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span>Continue with Google</span>
+    </a>
+    <div class="divider" style="display:none" id="googleDivider"><span>or use email</span></div>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="form-section active" id="signinForm">
+      <div class="input-group"><label>Email</label><input type="email" id="signinEmail" placeholder="you@example.com" /></div>
+      <div class="input-group"><label>Password</label><input type="password" id="signinPassword" placeholder="Your password" /></div>
+      <button class="submit-btn" id="signinBtn" onclick="handleSignIn()">Sign In</button>
+      <div class="footer-text">Don't have an account? <a onclick="switchTab('signup')">Sign up</a></div>
+    </div>
+    <div class="form-section" id="signupForm">
+      <div class="input-group"><label>Full Name</label><input type="text" id="signupName" placeholder="Your name" /></div>
+      <div class="input-group"><label>Email</label><input type="email" id="signupEmail" placeholder="you@example.com" /></div>
+      <div class="input-group"><label>Password</label><input type="password" id="signupPassword" placeholder="Min 6 characters" /></div>
+      <button class="submit-btn" id="signupBtn" onclick="handleSignUp()">Create Account</button>
+      <div class="footer-text">Already have an account? <a onclick="switchTab('signin')">Sign in</a></div>
+    </div>
+    <div class="secure-note"><b>Secure</b> &mdash; 2FA supported &middot; Encrypted passwords</div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+function showError(m){const e=$('errorMsg');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),5000);}
+function switchTab(t){$('errorMsg').classList.remove('show');if(t==='signin'){$('signinTab').classList.add('active');$('signupTab').classList.remove('active');$('signinForm').classList.add('active');$('signupForm').classList.remove('active');$('formTitle').textContent='Welcome back';$('formSub').textContent='Sign in to continue';}else{$('signupTab').classList.add('active');$('signinTab').classList.remove('active');$('signupForm').classList.add('active');$('signinForm').classList.remove('active');$('formTitle').textContent='Create account';$('formSub').textContent='Get started with FloodScope';}}
+$('signinPassword').addEventListener('keydown',e=>{if(e.key==='Enter')handleSignIn();});
+$('signupPassword').addEventListener('keydown',e=>{if(e.key==='Enter')handleSignUp();});
+async function handleSignIn(){const e=$('signinEmail').value.trim(),p=$('signinPassword').value;if(!e||!p){showError('Enter email and password');return;}const b=$('signinBtn');b.disabled=true;b.innerHTML='<span class="spinner"></span>';try{const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e,password:p})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Failed');window.location.href='/';}catch(err){showError(err.message);b.disabled=false;b.textContent='Sign In';}}
+async function handleSignUp(){const n=$('signupName').value.trim(),e=$('signupEmail').value.trim(),p=$('signupPassword').value;if(!n||!e||!p){showError('Fill all fields');return;}if(p.length<6){showError('Password min 6 chars');return;}const b=$('signupBtn');b.disabled=true;b.innerHTML='<span class="spinner"></span>';try{const r=await fetch('/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,email:e,password:p})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Failed');window.location.href='/';}catch(err){showError(err.message);b.disabled=false;b.textContent='Create Account';}}
+fetch('/api/health').then(r=>r.json()).then(d=>{if(d.googleEnabled){$('googleBtn').style.display='flex';$('googleDivider').style.display='flex';}}).catch(()=>{});
+const params=new URLSearchParams(window.location.search);if(params.get('error')==='google_failed')showError('Google sign-in failed. Try again.');
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Environment files
+.env
+.env.*
+
+# Build files
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Uploads
+uploads/
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/

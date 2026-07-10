@@ -1,0 +1,29 @@
+{
+  "name": "floodscope",
+  "version": "1.0.0",
+  "description": "FloodScope - Satellite Flood Detection & Analysis Platform",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "build": "node scripts/verify-build.js",
+    "import": "node scripts/import-csv.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-mongo": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-session": "^1.19.0",
+    "mongoose": "^8.8.0",
+    "multer": "^2.2.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

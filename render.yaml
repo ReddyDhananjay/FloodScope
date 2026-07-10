@@ -1,0 +1,41 @@
+# Render.com deployment config
+# Deploy instructions:
+# 1. Push this project to GitHub
+# 2. Go to https://render.com -> New -> Web Service
+# 3. Connect your GitHub repo
+# 4. Render will auto-detect this render.yaml
+#
+# Environment Variables to set in Render dashboard:
+#   MONGODB_URI            = your MongoDB Atlas connection string
+#   SESSION_SECRET         = a long random string (required in production)
+#   EE_SERVICE_ACCOUNT_KEY = the FULL CONTENTS of your ee-key.json service
+#                             account file, pasted as-is (Render has no
+#                             persistent filesystem to upload the file to)
+#   GOOGLE_CLIENT_ID       = (optional) for Google sign-in
+#   GOOGLE_CLIENT_SECRET   = (optional) for Google sign-in
+#   PORT                   = 8000 (Render sets this automatically)
+#
+# NOTE ON PYTHON: this app shells out to python3 (server/gee.py) for the
+# satellite analysis feature. Render's native Node runtime *usually* has
+# python3/pip available, but this isn't guaranteed for every build image —
+# if the deploy log shows "python3: command not found" or pip install
+# fails, switch this service to the Docker runtime instead (add a
+# Dockerfile that installs both Node and Python) so it's guaranteed.
+# The build command below installs both npm and pip dependencies either way.
+
+services:
+  - type: web
+    name: floodscope
+    runtime: node
+    plan: free
+    buildCommand: npm install && pip install -r requirements.txt
+    startCommand: node server/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false  # Set this in Render dashboard
+      - key: SESSION_SECRET
+        sync: false  # Set this in Render dashboard
+      - key: EE_SERVICE_ACCOUNT_KEY
+        sync: false  # Paste the full ee-key.json contents in Render dashboard
